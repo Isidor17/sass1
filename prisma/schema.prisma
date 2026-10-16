@@ -1,0 +1,79 @@
+// SQLite en local ; passer à "postgresql" pour la production (Supabase, Neon…).
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Atelier {
+  id        String     @id @default(cuid())
+  nom       String
+  telephone String     @unique // format international sans "+", ex: 221771234567
+  pinHash   String
+  quartier  String?
+  capaciteSemaine Int  @default(15) // nb de tenues que l'atelier peut finir par semaine
+  createdAt DateTime   @default(now())
+  clients   Client[]
+  commandes Commande[]
+}
+
+model Client {
+  id          String     @id @default(cuid())
+  atelierId   String
+  atelier     Atelier    @relation(fields: [atelierId], references: [id], onDelete: Cascade)
+  nom         String
+  telephone   String?
+  genre       String     @default("F") // "F" | "H"
+  notes       String?
+  carnetToken String     @unique // lien public du carnet de mesures du client
+  createdAt   DateTime   @default(now())
+  mesures     MesureSet[]
+  commandes   Commande[]
+
+  @@index([atelierId, nom])
+}
+
+// Historique : chaque prise de mesures crée un nouveau jeu, le plus récent fait foi.
+model MesureSet {
+  id        String   @id @default(cuid())
+  clientId  String
+  client    Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  valeurs   String   // JSON { cle: valeur en cm }
+  note      String?
+  createdAt DateTime @default(now())
+
+  @@index([clientId, createdAt])
+}
+
+model Commande {
+  id            String     @id @default(cuid())
+  atelierId     String
+  atelier       Atelier    @relation(fields: [atelierId], references: [id], onDelete: Cascade)
+  clientId      String
+  client        Client     @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  modele        String     // ex: "Grand boubou bazin, broderie col"
+  quantite      Int        @default(1)
+  prix          Int        @default(0) // FCFA
+  dateLivraison DateTime
+  statut        String     @default("RECU") // RECU | EN_COURS | PRET | LIVRE
+  suiviToken    String     @unique
+  notes         String?
+  createdAt     DateTime   @default(now())
+  pretLe        DateTime?
+  livreLe       DateTime?
+  paiements     Paiement[]
+
+  @@index([atelierId, statut, dateLivraison])
+}
+
+model Paiement {
+  id         String   @id @default(cuid())
+  commandeId String
+  commande   Commande @relation(fields: [commandeId], references: [id], onDelete: Cascade)
+  montant    Int      // FCFA
+  moyen      String   // WAVE | ORANGE_MONEY | ESPECES
+  createdAt  DateTime @default(now())
+}
