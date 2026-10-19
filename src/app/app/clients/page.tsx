@@ -3,6 +3,8 @@ import { db } from "@/lib/db";
 import { atelierConnecte } from "@/lib/session";
 import { afficherTelephone } from "@/lib/telephone";
 import { Alerte } from "@/components/Alerte";
+import { Avatar } from "@/components/Avatar";
+import { IcoChevron, IcoPhoto } from "@/components/Icones";
 
 export default async function Clients({ searchParams }: { searchParams: Promise<{ q?: string; importes?: string }> }) {
   const a = await atelierConnecte();
@@ -23,10 +25,12 @@ export default async function Clients({ searchParams }: { searchParams: Promise<
 
   return (
     <main className="page">
-      <div className="row between"><h1>Clients</h1><Link className="btn sm" href="/app/clients/nouveau">＋ Client</Link></div>
+      <div className="entete-page"><h1>Clients</h1><Link className="btn sm" href="/app/clients/nouveau">＋ Client</Link></div>
       {importes && <div style={{ marginTop: 12 }}><Alerte succes={`${importes} client(s) importé(s) depuis le carnet.`} /></div>}
-      <Link className="btn ghost block" style={{ marginTop: 12 }} href="/app/clients/importer">📷 Importer un carnet papier</Link>
-      <form style={{ margin: "12px 0" }}>
+      <Link className="action-photo" href="/app/clients/importer">
+        <IcoPhoto /><span>Importer un carnet papier<small>Une photo de page suffit</small></span><IcoChevron />
+      </Link>
+      <form style={{ margin: "0 0 12px" }}>
         <input name="q" type="search" placeholder="Rechercher un nom ou un numéro" defaultValue={recherche} />
       </form>
       {clients.length === 0 ? (
@@ -35,8 +39,9 @@ export default async function Clients({ searchParams }: { searchParams: Promise<
         <ul className="list">
           {clients.map((c) => (
             <li key={c.id}>
-              <Link href={`/app/clients/${c.id}`} className="card item row between">
-                <span><b>{c.nom}</b><br /><span className="small muted">{c.telephone ? afficherTelephone(c.telephone) : "Pas de numéro"}</span></span>
+              <Link href={`/app/clients/${c.id}`} className="card item ligne">
+                <Avatar nom={c.nom} />
+                <div className="ligne-corps"><b>{c.nom}</b><span className="small muted">{c.telephone ? afficherTelephone(c.telephone) : "Pas de numéro"}</span></div>
                 <span className="small muted">{c._count.commandes} cmd</span>
               </Link>
             </li>

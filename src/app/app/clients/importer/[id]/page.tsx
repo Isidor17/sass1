@@ -47,7 +47,7 @@ export default async function RelireImport({ params, searchParams }: { params: P
                 <div><label htmlFor={`c${i}_telephone`}>Téléphone</label><input id={`c${i}_telephone`} name={`c${i}_telephone`} type="tel" defaultValue={b.telephone ? afficherTelephone(b.telephone) : ""} /></div>
                 <div><label htmlFor={`c${i}_genre`}>Genre</label><select id={`c${i}_genre`} name={`c${i}_genre`} defaultValue={b.genre}><option value="F">Femme</option><option value="H">Homme</option></select></div>
               </div>
-              <ChampsMesures valeurs={b.mesures} prefixe={`c${i}_`} />
+              <ChampsMesures valeurs={b.mesures} prefixe={`c${i}_`} replierVides />
               <div><label htmlFor={`c${i}_notes`}>Autres mesures / notes</label><textarea id={`c${i}_notes`} name={`c${i}_notes`} defaultValue={b.notes} /></div>
             </div>
           </details>

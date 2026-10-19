@@ -10,6 +10,8 @@ import { AfficherMesures } from "@/components/AfficherMesures";
 import { StatutBadge } from "@/components/StatutBadge";
 import { Alerte } from "@/components/Alerte";
 import { QrCode } from "@/components/QrCode";
+import { Avatar } from "@/components/Avatar";
+import { IcoWhatsApp } from "@/components/Icones";
 
 export default async function FicheClient({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ importe?: string }> }) {
   const a = await atelierConnecte();
@@ -26,18 +28,21 @@ export default async function FicheClient({ params, searchParams }: { params: Pr
   return (
     <main className="page">
       {importe && <Alerte succes="Client importé avec ses mesures depuis son carnet." />}
-      <div className="row between">
-        <h1>{c.nom}</h1>
+      <div className="fiche-entete">
+        <Avatar nom={c.nom} />
+        <div className="ligne-corps">
+          <h1>{c.nom}</h1>
+          <p className="muted small">{c.telephone ? afficherTelephone(c.telephone) : "Pas de numéro"} · {c.genre === "H" ? "Homme" : "Femme"}</p>
+        </div>
         <Link className="btn ghost sm" href={`/app/clients/${c.id}/modifier`}>Modifier</Link>
       </div>
-      <p className="muted small">{c.telephone ? afficherTelephone(c.telephone) : "Pas de numéro"} · {c.genre === "H" ? "Homme" : "Femme"}</p>
       {c.notes && <p className="small">{c.notes}</p>}
 
-      <div className="row wrap" style={{ margin: "12px 0" }}>
+      <div className="grid2" style={{ margin: "14px 0" }}>
         <Link className="btn" href={`/app/commandes/nouvelle?client=${c.id}`}>＋ Commande</Link>
         {c.telephone && (
           <a className="btn wa" href={lienWhatsApp(c.telephone, messageCarnet({ atelier: a.nom, client: c.nom, lienCarnet }))} target="_blank" rel="noreferrer">
-            Envoyer son carnet
+            <IcoWhatsApp taille={20} /> Son carnet
           </a>
         )}
       </div>

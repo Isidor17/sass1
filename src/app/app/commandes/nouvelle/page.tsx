@@ -6,6 +6,8 @@ import { dateCourte, versInputDate } from "@/lib/format";
 import { afficherTelephone } from "@/lib/telephone";
 import { creerCommande } from "../../../actions";
 import { Alerte } from "@/components/Alerte";
+import { Avatar } from "@/components/Avatar";
+import { IcoChevron, IcoPhoto } from "@/components/Icones";
 
 export default async function NouvelleCommande({ searchParams }: { searchParams: Promise<{ client?: string; erreur?: string; q?: string }> }) {
   const a = await atelierConnecte();
@@ -25,12 +27,15 @@ export default async function NouvelleCommande({ searchParams }: { searchParams:
         <p className="muted">Pour quel client ?</p>
         <Alerte erreur={erreur} />
         <Link className="btn block" href="/app/clients/nouveau">＋ Nouveau client</Link>
+        <Link className="action-photo" style={{ marginTop: 12 }} href="/app/clients/importer"><IcoPhoto /><span>Importer depuis un carnet papier</span><IcoChevron /></Link>
         <form style={{ margin: "12px 0" }}><input name="q" type="search" placeholder="Rechercher un client existant" defaultValue={q} /></form>
         <ul className="list">
           {clients.map((c) => (
             <li key={c.id}>
-              <Link className="card item" href={`/app/commandes/nouvelle?client=${c.id}`}>
-                <b>{c.nom}</b> <span className="small muted">{c.telephone ? afficherTelephone(c.telephone) : ""}</span>
+              <Link className="card item ligne" href={`/app/commandes/nouvelle?client=${c.id}`}>
+                <Avatar nom={c.nom} />
+                <div className="ligne-corps"><b>{c.nom}</b><span className="small muted">{c.telephone ? afficherTelephone(c.telephone) : "Pas de numéro"}</span></div>
+                <IcoChevron />
               </Link>
             </li>
           ))}

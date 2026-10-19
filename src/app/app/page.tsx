@@ -3,8 +3,12 @@ import { db } from "@/lib/db";
 import { atelierConnecte } from "@/lib/session";
 import { chargeParSemaine } from "@/lib/capacite";
 import { dateCourte, fcfa, joursRestants } from "@/lib/format";
-import { StatutBadge } from "@/components/StatutBadge";
-import { Echeance } from "@/components/Echeance";
+import { LigneCommande } from "@/components/LigneCommande";
+
+function salutation() {
+  const h = Number(new Date().toLocaleString("fr-FR", { hour: "numeric", hour12: false, timeZone: "Africa/Dakar" }));
+  return h < 12 ? "Bonjour 👋" : h < 18 ? "Bon après-midi 👋" : "Bonsoir 👋";
+}
 
 export default async function Tableau() {
   const a = await atelierConnecte();
@@ -24,29 +28,24 @@ export default async function Tableau() {
 
   return (
     <main className="page">
-      <h1>{a.nom}</h1>
-      <p className="muted small">{ouvertes.length} commande(s) en cours · {fcfa(resteAEncaisser)} à encaisser</p>
-
-      <div className="kpis" style={{ marginTop: 12 }}>
-        <Link href="/app/commandes?filtre=retard" className="card kpi item"><b className={enRetard.length ? "retard" : ""}>{enRetard.length}</b><span>en retard</span></Link>
-        <Link href="/app/commandes?filtre=semaine" className="card kpi item"><b>{semaine.length}</b><span>à livrer sous 7 j</span></Link>
-        <Link href="/app/commandes?statut=PRET" className="card kpi item"><b>{prets.length}</b><span>prêts à récupérer</span></Link>
-      </div>
+      <section className="synthese">
+        <div className="l-motif" aria-hidden="true" />
+        <h1>{salutation()}</h1>
+        <p>{ouvertes.length} commande{ouvertes.length > 1 ? "s" : ""} en cours chez {a.nom}</p>
+        <div className="kpis">
+          <Link href="/app/commandes?filtre=retard"><b className={enRetard.length ? "alerte-kpi" : ""}>{enRetard.length}</b><span>en retard</span></Link>
+          <Link href="/app/commandes?filtre=semaine"><b>{semaine.length}</b><span>sous 7 jours</span></Link>
+          <Link href="/app/commandes?statut=PRET"><b>{prets.length}</b><span>prêtes</span></Link>
+        </div>
+        <div className="encaisser"><span>Reste à encaisser</span><b>{fcfa(resteAEncaisser)}</b></div>
+      </section>
 
       <h2>À faire en priorité</h2>
       {urgentes.length === 0 ? (
         <p className="muted">Rien d&apos;urgent. <Link href="/app/commandes/nouvelle">Ajouter une commande</Link></p>
       ) : (
         <ul className="list">
-          {urgentes.map((c) => (
-            <li key={c.id}>
-              <Link href={`/app/commandes/${c.id}`} className="card item">
-                <div className="row between"><b>{c.client.nom}</b><StatutBadge statut={c.statut} /></div>
-                <div className="small">{c.modele}{c.quantite > 1 ? ` ×${c.quantite}` : ""}</div>
-                <div className="small"><Echeance date={c.dateLivraison} statut={c.statut} /></div>
-              </Link>
-            </li>
-          ))}
+          {urgentes.map((c) => <li key={c.id}><LigneCommande c={c} /></li>)}
         </ul>
       )}
 

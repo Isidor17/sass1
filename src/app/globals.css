@@ -1,19 +1,21 @@
 :root {
-  --bg: #f7f4ef;
+  --bg: #fbf6ee;
   --surface: #ffffff;
-  --ink: #1c1917;
-  --muted: #6b645c;
-  --line: #e7e1d8;
-  --brand: #0f5c4d;
+  --ink: #1b1712;
+  --muted: #6a6157;
+  --line: #e9dfcf;
+  --brand: #0d4f43;
   --brand-ink: #ffffff;
-  --brand-soft: #e3f0ec;
+  --brand-soft: #e2efe9;
+  --or: #e8a33d;
+  --or-ink: #08342c;
   --accent: #c2410c;
   --warn-soft: #fdecdf;
   --ok: #15803d;
   --ok-soft: #dcfce7;
   --info-soft: #e0e7ff;
   --info: #3730a3;
-  --radius: 14px;
+  --radius: 16px;
   color-scheme: light;
 }
 
@@ -21,12 +23,14 @@
   :root {
     --bg: #14120f;
     --surface: #1e1b17;
-    --ink: #f3efe9;
-    --muted: #a59d93;
-    --line: #34302a;
-    --brand: #3fb99c;
-    --brand-ink: #0b1f1a;
+    --ink: #f4efe7;
+    --muted: #ada396;
+    --line: #332e27;
+    --brand: #4cc3a5;
+    --brand-ink: #08241e;
     --brand-soft: #173a32;
+    --or: #eeb256;
+    --or-ink: #2a1b05;
     --accent: #fb923c;
     --warn-soft: #3d2416;
     --ok: #4ade80;
@@ -46,11 +50,12 @@ body {
   -webkit-tap-highlight-color: transparent;
 }
 a { color: var(--brand); }
-h1 { font-size: 1.5rem; margin: 0 0 .25rem; line-height: 1.2; }
-h2 { font-size: 1.05rem; margin: 1.5rem 0 .5rem; }
+h1, h2, .titre { font-family: var(--font-titre), system-ui, sans-serif; letter-spacing: -0.015em; }
+h1 { font-size: 1.6rem; margin: 0 0 .25rem; line-height: 1.15; font-weight: 800; }
+h2 { font-size: 1.1rem; margin: 1.75rem 0 .6rem; font-weight: 700; }
 p { margin: .25rem 0 .75rem; }
 
-.page { max-width: 640px; margin: 0 auto; padding: 16px 16px 96px; }
+.page { max-width: 640px; margin: 0 auto; padding: 16px 16px calc(112px + env(safe-area-inset-bottom)); }
 .muted { color: var(--muted); }
 .small { font-size: .875rem; }
 .row { display: flex; gap: 8px; align-items: center; }
@@ -64,6 +69,7 @@ p { margin: .25rem 0 .75rem; }
   border: 1px solid var(--line);
   border-radius: var(--radius);
   padding: 14px 16px;
+  box-shadow: 0 1px 2px #3a2a1008;
 }
 .list { list-style: none; padding: 0; margin: 0; }
 .list > li + li { margin-top: 8px; }
@@ -323,3 +329,96 @@ nav.bas a.plus b { color: var(--brand); }
 .auth-logo { display: block; margin: 8px 0 24px; text-decoration: none; color: inherit; }
 /* Sur fond vert, la tuile du logo se distingue par un léger contraste */
 .l-entete .logo svg rect, .l-final .logo svg rect { fill: #ffffff1f; }
+
+/* ================= Espace atelier (identité Nawkat) ================= */
+.app-entete { background: var(--l-vert); color: #fff; position: sticky; top: 0; z-index: 5; }
+.app-entete-int { max-width: 640px; margin: 0 auto; padding: 10px 16px; display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.app-marque { display: inline-flex; align-items: center; gap: 8px; color: #fff; text-decoration: none; font: 800 1.1rem var(--font-titre), sans-serif; }
+.app-marque svg rect { fill: #ffffff1f; }
+.app-atelier { color: #ffffffcc; text-decoration: none; font-size: .9rem; max-width: 55%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* Boutons */
+.btn { border-radius: 14px; transition: transform .08s ease; }
+.btn:active { transform: scale(.98); }
+.btn.or { background: var(--or); color: var(--or-ink); }
+
+/* Barre de navigation du bas */
+nav.bas {
+  background: var(--surface); border-top: 1px solid var(--line);
+  padding: 6px 6px calc(8px + env(safe-area-inset-bottom)); align-items: flex-end;
+  box-shadow: 0 -4px 20px #3a2a100d;
+}
+nav.bas a { display: flex; flex-direction: column; align-items: center; gap: 2px; font-size: .72rem; font-weight: 600; color: var(--muted); padding: 6px 0 2px; }
+nav.bas a.on { color: var(--brand); }
+nav.bas a.on svg { stroke-width: 2.3; }
+nav.bas a.plus { padding: 0; }
+.plus-rond {
+  display: grid; place-items: center; width: 56px; height: 56px; margin-top: -26px; border-radius: 18px;
+  background: var(--or); color: var(--or-ink); box-shadow: 0 6px 16px #e8a33d55; border: 4px solid var(--bg);
+}
+
+/* Onglets : défilement horizontal signalé par un fondu à droite */
+.tabs {
+  scroll-snap-type: x proximity; scrollbar-width: none; margin: 0 -16px 14px; padding: 2px 16px 6px;
+  -webkit-mask-image: linear-gradient(90deg, #000 85%, transparent);
+  mask-image: linear-gradient(90deg, #000 85%, transparent);
+}
+.tabs::-webkit-scrollbar { display: none; }
+.tabs a { scroll-snap-align: start; background: var(--surface); font-weight: 600; }
+.tabs a.on { background: var(--brand); color: var(--brand-ink); border-color: var(--brand); }
+.tabs a:last-child { margin-right: 40px; }
+
+/* Bandeau de synthèse du tableau de bord */
+.synthese { position: relative; overflow: hidden; background: var(--l-vert); color: #fff; border-radius: 22px; padding: 18px 18px 16px; margin: 4px 0 8px; }
+.synthese .l-motif { opacity: .1; }
+.synthese > * { position: relative; }
+.synthese h1 { color: #fff; font-size: 1.45rem; }
+.synthese p { color: #ffffffc4; margin: 0 0 14px; font-size: .92rem; }
+.synthese .kpis a { background: #ffffff14; border: 1px solid #ffffff22; border-radius: 14px; color: #fff; text-decoration: none; padding: 10px 6px; text-align: center; }
+.synthese .kpis b { display: block; font: 800 1.7rem/1.1 var(--font-titre), sans-serif; }
+.synthese .kpis span { font-size: .75rem; color: #ffffffc4; }
+.synthese .kpis b.alerte-kpi { color: #ffb38a; }
+.synthese .encaisser { display: flex; justify-content: space-between; margin-top: 12px; padding-top: 12px; border-top: 1px solid #ffffff22; font-size: .92rem; }
+.synthese .encaisser b { color: var(--l-or); }
+
+/* Cartes de commande / client */
+.ligne { display: flex; gap: 12px; align-items: center; }
+.avatar {
+  flex: none; width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center;
+  background: var(--brand-soft); color: var(--brand); font: 800 .95rem var(--font-titre), sans-serif;
+}
+.ligne-corps { flex: 1; min-width: 0; }
+.ligne-corps b { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ligne-corps .small { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.card.item { transition: border-color .15s; }
+.card.item:active { border-color: var(--brand); }
+
+.entete-page { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin: 6px 0 14px; }
+.entete-page h1 { margin: 0; }
+.action-photo { display: flex; align-items: center; gap: 12px; padding: 14px 16px; border-radius: 16px; background: var(--brand-soft); color: var(--brand); text-decoration: none; font-weight: 700; margin-bottom: 12px; }
+.action-photo span { flex: 1; }
+.action-photo small { display: block; font-weight: 500; color: var(--muted); }
+
+/* Relecture d'import : champs vides repliés */
+.plus-mesures summary { cursor: pointer; color: var(--brand); font-weight: 600; font-size: .9rem; padding: 4px 0; }
+.plus-mesures[open] summary { margin-bottom: 10px; }
+
+/* Frise des étapes d'une commande */
+.etapes-cmd { list-style: none; display: grid; grid-template-columns: repeat(4, 1fr); padding: 0; margin: 0 0 4px; }
+.etapes-cmd li { position: relative; display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center; }
+.etapes-cmd li::before { content: ""; position: absolute; top: 15px; left: -50%; width: 100%; height: 3px; background: var(--line); z-index: 0; }
+.etapes-cmd li:first-child::before { display: none; }
+.etapes-cmd li.fait::before, .etapes-cmd li.ici::before { background: var(--brand); }
+.pastille-etape {
+  position: relative; z-index: 1; width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center;
+  background: var(--surface); border: 2px solid var(--line); color: var(--muted); font-weight: 800; font-size: .85rem;
+}
+.etapes-cmd li.fait .pastille-etape { background: var(--brand); border-color: var(--brand); color: var(--brand-ink); }
+.etapes-cmd li.ici .pastille-etape { background: var(--or); border-color: var(--or); color: var(--or-ink); box-shadow: 0 0 0 4px #e8a33d33; }
+.libelle-etape { font-size: .75rem; color: var(--muted); font-weight: 600; }
+.etapes-cmd li.ici .libelle-etape { color: var(--ink); }
+
+.fiche-entete { display: flex; align-items: center; gap: 14px; margin: 6px 0 4px; }
+.fiche-entete .avatar { width: 56px; height: 56px; border-radius: 16px; font-size: 1.2rem; }
+.fiche-entete h1 { margin: 0; }
+.fiche-entete .ligne-corps p { margin: 2px 0 0; }

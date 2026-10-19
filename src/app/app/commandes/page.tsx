@@ -3,8 +3,7 @@ import { db } from "@/lib/db";
 import { atelierConnecte } from "@/lib/session";
 import { joursRestants } from "@/lib/format";
 import { LIBELLES, STATUTS, estStatut } from "@/lib/statut";
-import { StatutBadge } from "@/components/StatutBadge";
-import { Echeance } from "@/components/Echeance";
+import { LigneCommande } from "@/components/LigneCommande";
 
 export default async function Commandes({ searchParams }: { searchParams: Promise<{ statut?: string; filtre?: string }> }) {
   const a = await atelierConnecte();
@@ -37,21 +36,13 @@ export default async function Commandes({ searchParams }: { searchParams: Promis
 
   return (
     <main className="page">
-      <div className="row between"><h1>Commandes</h1><Link className="btn sm" href="/app/commandes/nouvelle">＋ Commande</Link></div>
-      <nav className="tabs" style={{ marginTop: 12 }}>
+      <div className="entete-page"><h1>Commandes</h1><Link className="btn sm" href="/app/commandes/nouvelle">＋ Commande</Link></div>
+      <nav className="tabs">
         {onglets.map((o) => <Link key={o.href} href={o.href} className={o.on ? "on" : ""}>{o.label}</Link>)}
       </nav>
       {liste.length === 0 ? <p className="muted">Aucune commande ici.</p> : (
         <ul className="list">
-          {liste.map((c) => (
-            <li key={c.id}>
-              <Link href={`/app/commandes/${c.id}`} className="card item">
-                <div className="row between"><b>{c.client.nom}</b><StatutBadge statut={c.statut} /></div>
-                <div className="small">{c.modele}{c.quantite > 1 ? ` ×${c.quantite}` : ""}</div>
-                <div className="small"><Echeance date={c.dateLivraison} statut={c.statut} /></div>
-              </Link>
-            </li>
-          ))}
+          {liste.map((c) => <li key={c.id}><LigneCommande c={c} /></li>)}
         </ul>
       )}
     </main>

@@ -3,12 +3,13 @@ import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
 import { atelierConnecte, urlApp } from "@/lib/session";
 import { dateCourte, fcfa, versInputDate } from "@/lib/format";
-import { LIBELLES, STATUTS, estStatut, statutPrecedent, statutSuivant } from "@/lib/statut";
+import { LIBELLES, estStatut, statutPrecedent, statutSuivant } from "@/lib/statut";
 import { lienWhatsApp, messagePret, messageRecu } from "@/lib/whatsapp";
 import { ajouterPaiement, changerStatut, majCommande, supprimerCommande } from "../../../actions";
 import { Alerte } from "@/components/Alerte";
 import { StatutBadge } from "@/components/StatutBadge";
 import { Echeance } from "@/components/Echeance";
+import { Etapes } from "@/components/Etapes";
 
 const MOYENS: Record<string, string> = { WAVE: "Wave", ORANGE_MONEY: "Orange Money", ESPECES: "Espèces" };
 
@@ -58,11 +59,7 @@ export default async function Commande({ params, searchParams }: {
 
       <h2>Avancement</h2>
       <div className="card stack">
-        <div className="row wrap small">
-          {STATUTS.map((s, i) => (
-            <span key={s} className={s === c.statut ? `badge s-${s}` : "muted"}>{i > 0 ? "→ " : ""}{LIBELLES[s]}</span>
-          ))}
-        </div>
+        <Etapes statut={c.statut} />
         {suivant && (
           <form action={changerStatut}>
             <input type="hidden" name="id" value={c.id} />
