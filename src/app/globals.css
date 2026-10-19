@@ -422,3 +422,27 @@ nav.bas a.plus { padding: 0; }
 .fiche-entete .avatar { width: 56px; height: 56px; border-radius: 16px; font-size: 1.2rem; }
 .fiche-entete h1 { margin: 0; }
 .fiche-entete .ligne-corps p { margin: 2px 0 0; }
+
+/* Éditeur de la liste de mesures */
+.editeur-liste { list-style: none; padding: 0; margin: 0; display: grid; gap: 8px; }
+.editeur-ligne { display: flex; align-items: center; gap: 10px; padding: 10px 12px; }
+.editeur-ordre { display: flex; flex-direction: column; gap: 2px; }
+.editeur-ordre button, .editeur-suppr {
+  width: 34px; height: 30px; border-radius: 8px; border: 1px solid var(--line); background: var(--bg);
+  color: var(--muted); font-size: .75rem; cursor: pointer;
+}
+.editeur-ordre button:disabled, .editeur-suppr:disabled { opacity: .35; cursor: default; }
+.editeur-suppr { height: 40px; font-size: .95rem; color: var(--accent); }
+.editeur-champs { flex: 1; min-width: 0; display: grid; grid-template-columns: 1fr 96px; gap: 8px; }
+.editeur-champs input, .editeur-champs select { min-height: 42px; padding: 8px 10px; }
+.puce {
+  border: 1px dashed var(--brand); background: var(--brand-soft); color: var(--brand); font: inherit; font-size: .88rem; font-weight: 600;
+  border-radius: 999px; padding: 6px 12px; cursor: pointer;
+}
+.puce:disabled { opacity: .4; }
+.barre-enregistrer { position: sticky; bottom: calc(76px + env(safe-area-inset-bottom)); padding-top: 4px; }
+.btn:disabled { opacity: .55; cursor: default; }
+/* Libellé sur toute la largeur, sélecteur « pour qui » compact dessous */
+.editeur-champs { grid-template-columns: 1fr; gap: 6px; }
+.editeur-champs select { justify-self: start; width: auto; min-height: 34px; padding: 4px 30px 4px 10px; font-size: .85rem; border-radius: 999px; }
+.editeur-ligne { padding: 10px; gap: 8px; }

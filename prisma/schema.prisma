@@ -15,6 +15,7 @@ model Atelier {
   pinHash   String
   quartier  String?
   capaciteSemaine Int  @default(15) // nb de tenues que l'atelier peut finir par semaine
+  champsMesures String? // JSON [{cle, libelle, genres}] : mesures choisies par l'atelier ; null = liste par défaut
   createdAt DateTime   @default(now())
   clients   Client[]
   commandes Commande[]

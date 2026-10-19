@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
 import { atelierConnecte } from "@/lib/session";
-import { lireMesures } from "@/lib/mesures";
+import { champsAtelier, lireMesures } from "@/lib/mesures";
 import { nouvellesMesures } from "../../../../actions";
 import { Alerte } from "@/components/Alerte";
 import { ChampsMesures } from "@/components/ChampsMesures";
@@ -19,7 +19,7 @@ export default async function Mesures({ params, searchParams }: { params: Promis
       <Alerte erreur={erreur} />
       <form action={nouvellesMesures} className="stack">
         <input type="hidden" name="clientId" value={c.id} />
-        <ChampsMesures valeurs={lireMesures(c.mesures[0]?.valeurs)} />
+        <ChampsMesures champs={champsAtelier(a.champsMesures)} valeurs={lireMesures(c.mesures[0]?.valeurs)} />
         <div><label htmlFor="note">Note</label><input id="note" name="note" placeholder="ex: après grossesse, a maigri…" /></div>
         <button className="btn block">Enregistrer les mesures</button>
       </form>

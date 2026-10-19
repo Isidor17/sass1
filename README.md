@@ -19,6 +19,7 @@ Elle est construite pour **tester l'usage réel avec 10 tailleurs pilotes**. Ce 
 | **Carnet de mesures portable** que le client garde et montre à n'importe quel tailleur | `/carnet/[jeton]` |
 | **Charge par semaine** comparée à la capacité de l'atelier (anticiper Tabaski / Korité) | tableau de bord, nouvelle commande |
 | Tableau de bord : commandes en retard, à livrer sous 7 jours, prêtes, montant à encaisser | `/app` |
+| **Mesures personnalisées par atelier** : choisir, renommer, ordonner, ajouter ses propres mesures (Femme / Homme / Tous). Retirer une mesure n'efface aucune valeur | `/app/reglages/mesures` |
 | **Import photo du carnet papier** : Claude lit la page, le tailleur relit et corrige avant d'enregistrer | `/app/clients/importer` |
 | **QR code du carnet** : un autre tailleur le scanne et importe le client avec ses mesures ; sans compte, il est invité à s'inscrire | fiche client, `/carnet/[jeton]` |
 | Installable sur l'écran d'accueil Android | `public/manifest.webmanifest` |
@@ -64,7 +65,6 @@ prisma/schema.prisma     # Atelier, Client, MesureSet, Commande, Paiement
 - **WhatsApp manuel.** Le tailleur appuie sur « Envoyer » dans son WhatsApp. Ça ne coûte rien et ne demande aucune validation de Meta. L'envoi automatique (API WhatsApp Cloud) viendra quand l'usage sera prouvé.
 - **Paiements déclaratifs.** Le tailleur note l'acompte reçu ; aucune intégration Wave / PayDunya pour l'instant.
 - **Limitation des essais de code** gardée en mémoire du serveur : convient à une seule instance. À déplacer en base ou Redis si on passe à plusieurs.
-- **Liste de mesures fixe** (`src/lib/mesures.ts`), à ajuster après les entretiens.
 - Un seul utilisateur par atelier : pas d'employés ni d'apprentis.
 
 ## Import photo : fonctionnement et coût

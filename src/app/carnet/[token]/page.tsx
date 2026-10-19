@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
 import { dateCourte } from "@/lib/format";
-import { lireMesures } from "@/lib/mesures";
+import { champsAtelier, lireMesures } from "@/lib/mesures";
 import { atelierIdOptionnel, urlApp } from "@/lib/session";
 import { importerDepuisCarnet } from "../../actions";
 import { AfficherMesures } from "@/components/AfficherMesures";
@@ -35,7 +35,7 @@ export default async function Carnet({ params }: { params: Promise<{ token: stri
       <h1>{c.nom}</h1>
       <p className="small muted">Enregistré chez {c.atelier.nom}{m ? ` · mis à jour le ${dateCourte(m.createdAt)}` : ""}</p>
       <div className="card" style={{ marginTop: 12 }}>
-        <AfficherMesures valeurs={lireMesures(m?.valeurs)} genre={c.genre} />
+        <AfficherMesures valeurs={lireMesures(m?.valeurs)} champs={champsAtelier(c.atelier.champsMesures)} />
       </div>
       <p className="small muted" style={{ marginTop: 12 }}>Mesures en centimètres. Montrez ce code à votre tailleur :</p>
       <QrCode url={`${urlApp()}/carnet/${token}`} taille={160} />

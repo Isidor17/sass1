@@ -3,7 +3,7 @@ import { afficherTelephone, normaliserTelephone } from "./telephone";
 import { hacherPin, lireSession, pinValide, signerSession, verifierPin } from "./pin";
 import { chargeParSemaine, debutSemaine } from "./capacite";
 import { depuisInputDate, fcfa, joursRestants } from "./format";
-import { mesuresDepuisFormulaire } from "./mesures";
+import { CHAMPS_DEFAUT, champsAtelier, cleDepuisLibelle, libelleDe, mesuresAffichees, mesuresDepuisFormulaire, validerChamps } from "./mesures";
 import { statutPrecedent, statutSuivant } from "./statut";
 import { lienWhatsApp, messagePret } from "./whatsapp";
 
@@ -91,7 +91,7 @@ describe("mesures", () => {
     f.set("m_hanches", "abc");
     f.set("m_cou", "-3");
     f.set("m_epaule", "");
-    expect(mesuresDepuisFormulaire(f)).toEqual({ poitrine: 92.5, taille: 74 });
+    expect(mesuresDepuisFormulaire(f, CHAMPS_DEFAUT)).toEqual({ poitrine: 92.5, taille: 74 });
   });
 });
 
@@ -112,28 +112,72 @@ describe("statuts et WhatsApp", () => {
 });
 
 describe("import photo", () => {
-  it("convertit l'extraction en brouillons propres", async () => {
-    const { versBrouillons, ExtractionSchema } = await import("./extraction");
-    const vide = Object.fromEntries((await import("./mesures")).CHAMPS_MESURES.map((c) => [c.cle, null]));
-    const e = ExtractionSchema.parse({
+  it("convertit l'extraction en brouillons propres, selon les champs de l'atelier", async () => {
+    const { versBrouillons, schemaExtraction } = await import("./extraction");
+    const champs = [...CHAMPS_DEFAUT.slice(0, 4), { cle: "perso_carrure", libelle: "Carrure", genres: ["F", "H"] as ("F" | "H")[] }];
+    const vide = Object.fromEntries(champs.map((c) => [c.cle, null]));
+    const e = schemaExtraction(champs).parse({
       remarque: null,
       clients: [
-        { nom: " Awa Diop ", telephone: "77 123 45 67", genre: "inconnu", mesures: { ...vide, poitrine: 92.46, taille: 0, epaule: 900 }, autres: [{ libelle: "Carrure", valeur: "40" }], doute: null },
+        { nom: " Awa Diop ", telephone: "77 123 45 67", genre: "inconnu", mesures: { ...vide, poitrine: 92.46, taille: 0, epaule: 900, perso_carrure: 40 }, autres: [{ libelle: "Bassin", valeur: "100" }], doute: null },
         { nom: "  ", telephone: null, genre: "H", mesures: vide, autres: [], doute: null },
         { nom: "Modou", telephone: "abc", genre: "H", mesures: { ...vide, cou: 41 }, autres: [], doute: "Manche illisible" },
       ],
     });
-    const b = versBrouillons(e);
+    const b = versBrouillons(e, champs);
     expect(b).toHaveLength(2);
-    expect(b[0]).toEqual({ nom: "Awa Diop", telephone: "221771234567", genre: "F", mesures: { poitrine: 92.5 }, notes: "Carrure : 40", doute: null });
+    expect(b[0]).toEqual({ nom: "Awa Diop", telephone: "221771234567", genre: "F", mesures: { poitrine: 92.5, perso_carrure: 40 }, notes: "Bassin : 100", doute: null });
     expect(b[1].genre).toBe("H");
     expect(b[1].telephone).toBeNull();
     expect(b[1].doute).toBe("Manche illisible");
+  });
+  it("le schéma refuse une extraction sans les champs de l'atelier", async () => {
+    const { schemaExtraction } = await import("./extraction");
+    const r = schemaExtraction(CHAMPS_DEFAUT.slice(0, 1)).safeParse({ remarque: null, clients: [{ nom: "A", telephone: null, genre: "F", mesures: {}, autres: [], doute: null }] });
+    expect(r.success).toBe(false);
   });
   it("lit les mesures préfixées d'un formulaire multi-clients", () => {
     const f = new FormData();
     f.set("c1_m_taille", "70");
     f.set("m_taille", "99");
-    expect(mesuresDepuisFormulaire(f, "c1_")).toEqual({ taille: 70 });
+    expect(mesuresDepuisFormulaire(f, CHAMPS_DEFAUT, "c1_")).toEqual({ taille: 70 });
+  });
+});
+
+describe("mesures personnalisées", () => {
+  it("valide et nettoie une liste", () => {
+    expect(validerChamps([
+      { cle: "taille", libelle: "  Ceinture ", genres: ["F", "H"] },
+      { cle: "taille", libelle: "Doublon", genres: ["F"] },
+      { cle: "Mauvaise Clé", libelle: "X" },
+      { cle: "perso_bassin", libelle: "", genres: ["F"] },
+      { cle: "perso_genou", libelle: "Genou", genres: ["Z"] },
+      { cle: "perso_robe", libelle: "Robe", genres: ["F"] },
+    ])).toEqual([
+      { cle: "taille", libelle: "Ceinture", genres: ["F", "H"] },
+      { cle: "perso_genou", libelle: "Genou", genres: ["F", "H"] },
+      { cle: "perso_robe", libelle: "Robe", genres: ["F"] },
+    ]);
+    expect(validerChamps([])).toBeNull();
+    expect(validerChamps("x")).toBeNull();
+  });
+  it("revient à la liste par défaut si rien n'est réglé ou si le JSON est abîmé", () => {
+    expect(champsAtelier(null)).toBe(CHAMPS_DEFAUT);
+    expect(champsAtelier("{pas du json")).toBe(CHAMPS_DEFAUT);
+    expect(champsAtelier(JSON.stringify([{ cle: "cou", libelle: "Cou", genres: ["H"] }]))).toEqual([{ cle: "cou", libelle: "Cou", genres: ["H"] }]);
+  });
+  it("fabrique des clés uniques à partir du libellé", () => {
+    expect(cleDepuisLibelle("Tour de poitrine haute", [])).toBe("perso_tour_de_poitrine_haute");
+    expect(cleDepuisLibelle("Épaule", ["perso_epaule"])).toBe("perso_epaule_2");
+    expect(cleDepuisLibelle("!!!", [])).toBe("perso_mesure");
+  });
+  it("affiche aussi les mesures retirées de la liste, avec un libellé lisible", () => {
+    const champs = [{ cle: "taille", libelle: "Ceinture", genres: ["F", "H"] as ("F" | "H")[] }];
+    expect(mesuresAffichees({ perso_tour_genou: 38, taille: 70, entrejambe: 80 }, champs)).toEqual([
+      { cle: "taille", libelle: "Ceinture", valeur: 70 },
+      { cle: "perso_tour_genou", libelle: "Tour genou", valeur: 38 },
+      { cle: "entrejambe", libelle: "Entrejambe", valeur: 80 },
+    ]);
+    expect(libelleDe("perso_bassin_2")).toBe("Bassin");
   });
 });

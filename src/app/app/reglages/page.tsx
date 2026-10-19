@@ -1,7 +1,9 @@
 import { atelierConnecte, urlApp } from "@/lib/session";
 import { afficherTelephone } from "@/lib/telephone";
 import { deconnexion, majAtelier } from "../../actions";
+import Link from "next/link";
 import { Alerte } from "@/components/Alerte";
+import { IcoChevron } from "@/components/Icones";
 
 export default async function Reglages({ searchParams }: { searchParams: Promise<{ ok?: string }> }) {
   const a = await atelierConnecte();
@@ -21,6 +23,9 @@ export default async function Reglages({ searchParams }: { searchParams: Promise
         </div>
         <button className="btn block">Enregistrer</button>
       </form>
+      <Link className="action-photo" style={{ marginTop: 20 }} href="/app/reglages/mesures">
+        <span>Mes mesures<small>Choisir, renommer et ordonner les mesures que je prends</small></span><IcoChevron />
+      </Link>
       <h2>Installer l&apos;application</h2>
       <p className="small">Sur Android : ouvrez {urlApp()} dans Chrome → menu ⋮ → « Ajouter à l&apos;écran d&apos;accueil ».</p>
       <form action={deconnexion} style={{ marginTop: 24 }}><button className="btn ghost block">Se déconnecter</button></form>

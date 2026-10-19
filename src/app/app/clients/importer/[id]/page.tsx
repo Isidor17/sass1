@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { atelierConnecte } from "@/lib/session";
 import { afficherTelephone } from "@/lib/telephone";
 import type { Brouillon } from "@/lib/extraction";
+import { champsAtelier } from "@/lib/mesures";
 import { validerImport } from "../../../../actions";
 import { Alerte } from "@/components/Alerte";
 import { ChampsMesures } from "@/components/ChampsMesures";
@@ -23,6 +24,7 @@ export default async function RelireImport({ params, searchParams }: { params: P
     );
   }
   const { brouillons, remarque } = JSON.parse(imp.resultat) as { brouillons: Brouillon[]; remarque: string | null };
+  const champs = champsAtelier(a.champsMesures);
 
   return (
     <main className="page">
@@ -47,7 +49,7 @@ export default async function RelireImport({ params, searchParams }: { params: P
                 <div><label htmlFor={`c${i}_telephone`}>Téléphone</label><input id={`c${i}_telephone`} name={`c${i}_telephone`} type="tel" defaultValue={b.telephone ? afficherTelephone(b.telephone) : ""} /></div>
                 <div><label htmlFor={`c${i}_genre`}>Genre</label><select id={`c${i}_genre`} name={`c${i}_genre`} defaultValue={b.genre}><option value="F">Femme</option><option value="H">Homme</option></select></div>
               </div>
-              <ChampsMesures valeurs={b.mesures} prefixe={`c${i}_`} replierVides />
+              <ChampsMesures champs={champs} valeurs={b.mesures} prefixe={`c${i}_`} replierVides />
               <div><label htmlFor={`c${i}_notes`}>Autres mesures / notes</label><textarea id={`c${i}_notes`} name={`c${i}_notes`} defaultValue={b.notes} /></div>
             </div>
           </details>

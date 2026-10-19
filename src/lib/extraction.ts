@@ -1,28 +1,36 @@
 import { z } from "zod";
-import { CHAMPS_MESURES, type Mesures } from "./mesures";
+import type { ChampMesure, Mesures } from "./mesures";
 import { normaliserTelephone } from "./telephone";
 
-// Schéma demandé au modèle : un champ par mesure connue (null si absente), le reste dans "autres".
-const champs = Object.fromEntries(CHAMPS_MESURES.map((c) => [c.cle, z.number().nullable()])) as Record<
-  string,
-  z.ZodNullable<z.ZodNumber>
->;
+export type Extraction = {
+  clients: {
+    nom: string;
+    telephone: string | null;
+    genre: "F" | "H" | "inconnu";
+    mesures: Record<string, number | null>;
+    autres: { libelle: string; valeur: string }[];
+    doute: string | null;
+  }[];
+  remarque: string | null;
+};
 
-export const ClientExtraitSchema = z.object({
-  nom: z.string(),
-  telephone: z.string().nullable(),
-  genre: z.enum(["F", "H", "inconnu"]),
-  mesures: z.object(champs),
-  autres: z.array(z.object({ libelle: z.string(), valeur: z.string() })),
-  doute: z.string().nullable(),
-});
-
-export const ExtractionSchema = z.object({
-  clients: z.array(ClientExtraitSchema),
-  remarque: z.string().nullable(),
-});
-
-export type Extraction = z.infer<typeof ExtractionSchema>;
+/** Schéma demandé au modèle : un champ par mesure de l'atelier (null si absente), le reste dans "autres". */
+export function schemaExtraction(champs: ChampMesure[]): z.ZodType<Extraction> {
+  const mesures = z.object(Object.fromEntries(champs.map((c) => [c.cle, z.number().nullable()])));
+  return z.object({
+    clients: z.array(
+      z.object({
+        nom: z.string(),
+        telephone: z.string().nullable(),
+        genre: z.enum(["F", "H", "inconnu"]),
+        mesures,
+        autres: z.array(z.object({ libelle: z.string(), valeur: z.string() })),
+        doute: z.string().nullable(),
+      }),
+    ),
+    remarque: z.string().nullable(),
+  }) as z.ZodType<Extraction>;
+}
 
 /** Client prêt à être relu par le tailleur. */
 export type Brouillon = {
@@ -34,12 +42,12 @@ export type Brouillon = {
   doute: string | null;
 };
 
-export function versBrouillons(e: Extraction): Brouillon[] {
+export function versBrouillons(e: Extraction, champs: ChampMesure[]): Brouillon[] {
   return e.clients
     .filter((c) => c.nom.trim())
     .map((c) => {
       const mesures: Mesures = {};
-      for (const ch of CHAMPS_MESURES) {
+      for (const ch of champs) {
         const v = c.mesures[ch.cle];
         if (typeof v === "number" && Number.isFinite(v) && v > 0 && v < 400) mesures[ch.cle] = Math.round(v * 10) / 10;
       }
@@ -54,4 +62,6 @@ export function versBrouillons(e: Extraction): Brouillon[] {
     });
 }
 
-export const LISTE_CHAMPS_PROMPT = CHAMPS_MESURES.map((c) => `- ${c.cle} : ${c.libelle}`).join("\n");
+export function listeChampsPrompt(champs: ChampMesure[]): string {
+  return champs.map((c) => `- ${c.cle} : ${c.libelle}`).join("\n");
+}

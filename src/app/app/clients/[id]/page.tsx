@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
 import { atelierConnecte, urlApp } from "@/lib/session";
-import { lireMesures } from "@/lib/mesures";
+import { champsAtelier, lireMesures } from "@/lib/mesures";
 import { afficherTelephone } from "@/lib/telephone";
 import { dateCourte, fcfa } from "@/lib/format";
 import { lienWhatsApp, messageCarnet } from "@/lib/whatsapp";
@@ -50,7 +50,7 @@ export default async function FicheClient({ params, searchParams }: { params: Pr
       <div className="row between"><h2>Mesures</h2><Link className="small" href={`/app/clients/${c.id}/mesures`}>Nouvelles mesures</Link></div>
       <div className="card">
         {derniere && <p className="small muted">Prises le {dateCourte(derniere.createdAt)}{derniere.note ? ` · ${derniere.note}` : ""}</p>}
-        <AfficherMesures valeurs={lireMesures(derniere?.valeurs)} genre={c.genre} />
+        <AfficherMesures valeurs={lireMesures(derniere?.valeurs)} champs={champsAtelier(a.champsMesures)} />
       </div>
       {c.mesures.length > 1 && <p className="small muted">{c.mesures.length - 1} ancienne(s) prise(s) de mesures conservée(s).</p>}
 

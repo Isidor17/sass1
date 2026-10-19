@@ -7,7 +7,7 @@ import { hacherPin, pinValide, verifierPin } from "@/lib/pin";
 import { atelierConnecte, fermerSession, ouvrirSession } from "@/lib/session";
 import { normaliserTelephone } from "@/lib/telephone";
 import { nouveauToken } from "@/lib/token";
-import { mesuresDepuisFormulaire } from "@/lib/mesures";
+import { champsAtelier, cleDepuisLibelle, lireMesures, mesuresDepuisFormulaire, validerChamps } from "@/lib/mesures";
 import { depuisInputDate } from "@/lib/format";
 import { estStatut } from "@/lib/statut";
 import { versBrouillons } from "@/lib/extraction";
@@ -111,7 +111,7 @@ export async function creerClient(f: FormData) {
   const telephone = telSaisi ? normaliserTelephone(telSaisi) : null;
   if (telSaisi && !telephone) erreur("/app/clients/nouveau", "Numéro de téléphone invalide.");
 
-  const mesures = mesuresDepuisFormulaire(f);
+  const mesures = mesuresDepuisFormulaire(f, champsAtelier(a.champsMesures));
   const c = await db.client.create({
     data: {
       atelierId: a.id,
@@ -151,8 +151,15 @@ export async function nouvellesMesures(f: FormData) {
   const id = txt(f, "clientId");
   const c = await db.client.findFirst({ where: { id, atelierId: a.id } });
   if (!c) redirect("/app/clients");
-  const mesures = mesuresDepuisFormulaire(f);
-  if (!Object.keys(mesures).length) erreur(`/app/clients/${id}/mesures`, "Saisissez au moins une mesure.");
+  const champs = champsAtelier(a.champsMesures);
+  const saisies = mesuresDepuisFormulaire(f, champs);
+  if (!Object.keys(saisies).length) erreur(`/app/clients/${id}/mesures`, "Saisissez au moins une mesure.");
+  // Les mesures hors de la liste actuelle de l'atelier (anciennes ou importées) sont conservées.
+  const precedentes = await db.mesureSet.findFirst({ where: { clientId: id }, orderBy: { createdAt: "desc" } });
+  const conservees = Object.fromEntries(
+    Object.entries(lireMesures(precedentes?.valeurs)).filter(([k]) => !champs.some((ch) => ch.cle === k)),
+  );
+  const mesures = { ...conservees, ...saisies };
   await db.mesureSet.create({ data: { clientId: id, valeurs: JSON.stringify(mesures), note: txt(f, "note") || null } });
   redirect(`/app/clients/${id}`);
 }
@@ -260,8 +267,9 @@ export async function importerPhoto(f: FormData) {
 
   let id: string;
   try {
-    const extraction = await extraireCarnet({ data: Buffer.from(await fichier.arrayBuffer()).toString("base64"), mediaType: type! });
-    const brouillons = versBrouillons(extraction);
+    const champs = champsAtelier(a.champsMesures);
+    const extraction = await extraireCarnet({ data: Buffer.from(await fichier.arrayBuffer()).toString("base64"), mediaType: type! }, champs);
+    const brouillons = versBrouillons(extraction, champs);
     if (!brouillons.length) erreur("/app/clients/importer", "Aucun client trouvé sur la photo. Cadrez la page entière, bien éclairée.");
     const imp = await db.importPhoto.create({
       data: { atelierId: a.id, resultat: JSON.stringify({ brouillons, remarque: extraction.remarque }) },
@@ -280,6 +288,7 @@ export async function validerImport(f: FormData) {
   const imp = await db.importPhoto.findFirst({ where: { id, atelierId: a.id, valide: false } });
   if (!imp) redirect("/app/clients");
   const n = Math.min(100, entier(f, "nombre"));
+  const champs = champsAtelier(a.champsMesures);
 
   const aCreer = [];
   for (let i = 0; i < n; i++) {
@@ -287,7 +296,7 @@ export async function validerImport(f: FormData) {
     const nom = txt(f, `c${i}_nom`);
     if (!nom) continue;
     const telSaisi = txt(f, `c${i}_telephone`);
-    const mesures = mesuresDepuisFormulaire(f, `c${i}_`);
+    const mesures = mesuresDepuisFormulaire(f, champs, `c${i}_`);
     aCreer.push({
       atelierId: a.id,
       nom,
@@ -339,4 +348,35 @@ export async function importerDepuisCarnet(f: FormData) {
     },
   });
   redirect(`/app/clients/${c.id}?importe=1`);
+}
+
+// ---------------- Mesures personnalisées de l'atelier ----------------
+
+export async function enregistrerChampsMesures(f: FormData) {
+  const a = await atelierConnecte();
+  let brut: unknown;
+  try {
+    brut = JSON.parse(txt(f, "champs"));
+  } catch {
+    erreur("/app/reglages/mesures", "Liste illisible, réessayez.");
+  }
+  // Les champs ajoutés par le tailleur arrivent sans clé : on la fabrique à partir du libellé.
+  const liste: { cle?: string; libelle?: string }[] = Array.isArray(brut) ? brut : [];
+  const cleValide = (c?: string) => !!c && /^[a-z0-9_]{1,40}$/.test(c);
+  const prises = new Set<string>(liste.map((c) => c?.cle).filter(cleValide) as string[]);
+  const avecCles = liste.map((c) => {
+    const cle = cleValide(c?.cle) ? c.cle! : cleDepuisLibelle(String(c?.libelle ?? ""), prises);
+    prises.add(cle);
+    return { ...c, cle };
+  });
+  const champs = validerChamps(avecCles);
+  if (!champs) erreur("/app/reglages/mesures", "Gardez au moins une mesure.");
+  await db.atelier.update({ where: { id: a.id }, data: { champsMesures: JSON.stringify(champs) } });
+  redirect("/app/reglages/mesures?ok=1");
+}
+
+export async function reinitialiserChampsMesures() {
+  const a = await atelierConnecte();
+  await db.atelier.update({ where: { id: a.id }, data: { champsMesures: null } });
+  redirect("/app/reglages/mesures?ok=1");
 }

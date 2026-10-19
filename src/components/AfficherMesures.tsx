@@ -1,12 +1,12 @@
-import { champsPour, type Mesures } from "@/lib/mesures";
+import { mesuresAffichees, type ChampMesure, type Mesures } from "@/lib/mesures";
 
-export function AfficherMesures({ valeurs, genre }: { valeurs: Mesures; genre: string }) {
-  const champs = champsPour(genre).filter((c) => valeurs[c.cle] !== undefined);
-  if (!champs.length) return <p className="muted">Aucune mesure enregistrée.</p>;
+export function AfficherMesures({ valeurs, champs }: { valeurs: Mesures; champs: ChampMesure[] }) {
+  const lignes = mesuresAffichees(valeurs, champs);
+  if (!lignes.length) return <p className="muted">Aucune mesure enregistrée.</p>;
   return (
     <div className="mesures">
-      {champs.map((c) => (
-        <div key={c.cle}><span className="small">{c.libelle}</span><b>{valeurs[c.cle]}</b></div>
+      {lignes.map((m) => (
+        <div key={m.cle}><span className="small">{m.libelle}</span><b>{m.valeur}</b></div>
       ))}
     </div>
   );
