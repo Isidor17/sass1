@@ -10,6 +10,8 @@ import { Alerte } from "@/components/Alerte";
 import { StatutBadge } from "@/components/StatutBadge";
 import { Echeance } from "@/components/Echeance";
 import { Etapes } from "@/components/Etapes";
+import { AfficherMesures } from "@/components/AfficherMesures";
+import { champsAtelier, lireMesures } from "@/lib/mesures";
 
 const MOYENS: Record<string, string> = { WAVE: "Wave", ORANGE_MONEY: "Orange Money", ESPECES: "Espèces" };
 
@@ -22,7 +24,11 @@ export default async function Commande({ params, searchParams }: {
   const sp = await searchParams;
   const c = await db.commande.findFirst({
     where: { id, atelierId: a.id },
-    include: { client: true, paiements: { orderBy: { createdAt: "asc" } } },
+    include: {
+      client: { include: { mesures: { orderBy: { createdAt: "desc" }, take: 1, select: { id: true, createdAt: true } } } },
+      paiements: { orderBy: { createdAt: "asc" } },
+      mesureSet: true,
+    },
   });
   if (!c) notFound();
 
@@ -90,6 +96,27 @@ export default async function Commande({ params, searchParams }: {
             <select name="moyen" aria-label="Moyen" style={{ maxWidth: 130 }}><option value="WAVE">Wave</option><option value="ORANGE_MONEY">OM</option><option value="ESPECES">Espèces</option></select>
             <button className="btn">OK</button>
           </form>
+        )}
+      </div>
+
+      <h2>Mesures de cette commande</h2>
+      <div className="card">
+        {c.mesureSet ? (
+          <>
+            <p className="small muted mesures-commande-entete">
+              <span>Prises le {dateCourte(c.mesureSet.createdAt)}{c.mesureSet.note ? ` · ${c.mesureSet.note}` : ""}</span>
+            </p>
+            <AfficherMesures valeurs={lireMesures(c.mesureSet.valeurs)} champs={champsAtelier(a.champsMesures)} />
+            {c.client.mesures[0] && c.client.mesures[0].id !== c.mesureSet.id && (
+              <p className="small" style={{ margin: "10px 0 0" }}>
+                Le client a de nouvelles mesures depuis (le {dateCourte(c.client.mesures[0].createdAt)}). <Link href={`/app/clients/${c.client.id}`}>Voir la fiche</Link>
+              </p>
+            )}
+          </>
+        ) : (
+          <p className="small muted" style={{ margin: 0 }}>
+            Aucune mesure attachée à cette commande. <Link href={`/app/clients/${c.client.id}/mesures?commande=${c.id}`}>Prendre les mesures</Link>
+          </p>
         )}
       </div>
 

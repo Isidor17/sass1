@@ -90,12 +90,14 @@ export async function deconnexion() {
 export async function majAtelier(f: FormData) {
   const a = await atelierConnecte();
   const capacite = entier(f, "capaciteSemaine");
+  const validite = parseInt(txt(f, "validiteMesuresMois"), 10);
   await db.atelier.update({
     where: { id: a.id },
     data: {
       nom: txt(f, "nom") || a.nom,
       quartier: txt(f, "quartier") || null,
       capaciteSemaine: capacite || a.capaciteSemaine,
+      validiteMesuresMois: Number.isFinite(validite) && validite >= 0 && validite <= 60 ? validite : a.validiteMesuresMois,
     },
   });
   redirect("/app/reglages?ok=1");
@@ -160,8 +162,30 @@ export async function nouvellesMesures(f: FormData) {
     Object.entries(lireMesures(precedentes?.valeurs)).filter(([k]) => !champs.some((ch) => ch.cle === k)),
   );
   const mesures = { ...conservees, ...saisies };
-  await db.mesureSet.create({ data: { clientId: id, valeurs: JSON.stringify(mesures), note: txt(f, "note") || null } });
-  redirect(`/app/clients/${id}`);
+  const prise = await db.mesureSet.create({ data: { clientId: id, valeurs: JSON.stringify(mesures), note: txt(f, "note") || null } });
+  // Venu d'une commande sans mesures : on les y attache.
+  const commandeId = txt(f, "commandeId");
+  if (commandeId) {
+    const rattachee = await db.commande.updateMany({ where: { id: commandeId, atelierId: a.id, clientId: id, mesureSetId: null }, data: { mesureSetId: prise.id } });
+    if (rattachee.count) redirect(`/app/commandes/${commandeId}`);
+  }
+  // Venu de l'alerte « mesures anciennes » d'une nouvelle commande : on y retourne.
+  redirect(txt(f, "retour") === "commande" ? `/app/commandes/nouvelle?client=${id}&mesuresOk=1` : `/app/clients/${id}?mesures=1`);
+}
+
+/** Refait d'une ancienne prise la prise de référence (le client a retrouvé son ancien gabarit). */
+export async function restaurerMesures(f: FormData) {
+  const a = await atelierConnecte();
+  const ancienne = await db.mesureSet.findFirst({ where: { id: txt(f, "setId"), client: { atelierId: a.id } } });
+  if (!ancienne) redirect("/app/clients");
+  await db.mesureSet.create({
+    data: {
+      clientId: ancienne!.clientId,
+      valeurs: ancienne!.valeurs,
+      note: `Reprise des mesures du ${ancienne!.createdAt.toLocaleDateString("fr-FR", { timeZone: "Africa/Dakar" })}`,
+    },
+  });
+  redirect(`/app/clients/${ancienne!.clientId}?mesures=1`);
 }
 
 // ---------------- Commandes ----------------
@@ -179,10 +203,12 @@ export async function creerCommande(f: FormData) {
 
   const acompte = entier(f, "acompte");
   const moyen = txt(f, "moyen") || "ESPECES";
+  const mesuresDuJour = await db.mesureSet.findFirst({ where: { clientId }, orderBy: { createdAt: "desc" }, select: { id: true } });
   const cmd = await db.commande.create({
     data: {
       atelierId: a.id,
       clientId,
+      mesureSetId: mesuresDuJour?.id ?? null,
       modele,
       quantite: entier(f, "quantite") || 1,
       prix: entier(f, "prix"),

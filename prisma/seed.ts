@@ -23,6 +23,12 @@ async function main() {
     });
     ids.push(r.id);
   }
+  // Awa : mesures prises il y a 14 mois, après une première prise il y a 2 ans (démo de l'alerte et de l'historique).
+  const awa = await db.mesureSet.findFirstOrThrow({ where: { clientId: ids[0] } });
+  await db.mesureSet.update({ where: { id: awa.id }, data: { createdAt: jours(-425), note: "Avant la Tabaski" } });
+  await db.mesureSet.create({
+    data: { clientId: ids[0], createdAt: jours(-730), valeurs: JSON.stringify({ epaule: 37, poitrine: 88, taille: 70, hanches: 98, longueur_boubou: 145, manche: 58 }) },
+  });
   const cmds = [
     { c: 0, modele: "Taille basse wax", prix: 15000, j: -2, statut: "EN_COURS", acompte: 5000 },
     { c: 1, modele: "Grand boubou bazin", prix: 35000, j: 3, statut: "RECU", acompte: 15000, q: 1 },

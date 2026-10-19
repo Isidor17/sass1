@@ -72,6 +72,12 @@ describe("format", () => {
   it("formate les FCFA", () => {
     expect(fcfa(25000)).toBe("25 000 F");
   });
+  it("affiche l'année seulement si elle n'est pas l'année en cours", async () => {
+    const { dateCourte } = await import("./format");
+    const now = new Date("2026-10-20T10:00:00Z");
+    expect(dateCourte(new Date("2026-08-20T12:00:00Z"), now)).toBe("jeu. 20 août");
+    expect(dateCourte(new Date("2025-08-20T12:00:00Z"), now)).toBe("mer. 20 août 2025");
+  });
   it("lit les dates de formulaire", () => {
     expect(depuisInputDate("2026-12-01")?.toISOString()).toBe("2026-12-01T12:00:00.000Z");
     expect(depuisInputDate("01/12/2026")).toBeNull();
@@ -179,5 +185,36 @@ describe("mesures personnalisées", () => {
       { cle: "entrejambe", libelle: "Entrejambe", valeur: 80 },
     ]);
     expect(libelleDe("perso_bassin_2")).toBe("Bassin");
+  });
+});
+
+describe("historique des mesures", async () => {
+  const { ancienneteLisible, ecarts, formatEcart, ilYa, mesuresAVerifier, moisEcoules } = await import("./historique");
+  const now = new Date("2026-10-20T10:00:00Z");
+  it("compte les mois écoulés", () => {
+    expect(moisEcoules(new Date("2025-08-20T10:00:00Z"), now)).toBe(14);
+    expect(moisEcoules(new Date("2026-04-21T10:00:00Z"), now)).toBe(5);
+    expect(moisEcoules(new Date("2026-04-20T10:00:00Z"), now)).toBe(6);
+  });
+  it("dit l'ancienneté en langage courant", () => {
+    expect(ancienneteLisible(new Date("2026-10-20T08:00:00Z"), now)).toBe("aujourd'hui");
+    expect(ilYa(new Date("2026-10-20T08:00:00Z"), now)).toBe("aujourd'hui");
+    expect(ilYa(new Date("2025-08-20T10:00:00Z"), now)).toBe("il y a 14 mois");
+    expect(ancienneteLisible(new Date("2026-10-17T10:00:00Z"), now)).toBe("3 jours");
+    expect(ancienneteLisible(new Date("2026-09-25T10:00:00Z"), now)).toBe("3 semaines");
+    expect(ancienneteLisible(new Date("2025-08-20T10:00:00Z"), now)).toBe("14 mois");
+    expect(ancienneteLisible(new Date("2023-10-01T10:00:00Z"), now)).toBe("3 ans");
+  });
+  it("alerte quand les mesures dépassent la validité de l'atelier", () => {
+    expect(mesuresAVerifier(new Date("2026-04-20T10:00:00Z"), 6, now)).toBe(true);
+    expect(mesuresAVerifier(new Date("2026-05-01T10:00:00Z"), 6, now)).toBe(false);
+    expect(mesuresAVerifier(new Date("2020-01-01T10:00:00Z"), 0, now)).toBe(false);
+    expect(mesuresAVerifier(null, 6, now)).toBe(false);
+  });
+  it("calcule les écarts entre deux prises", () => {
+    expect(ecarts({ taille: 79, poitrine: 92, hanches: 101.5, cou: 40 }, { taille: 74, poitrine: 92, hanches: 103 })).toEqual({ taille: 5, hanches: -1.5 });
+    expect(ecarts({ taille: 79 }, null)).toEqual({});
+    expect(formatEcart(5)).toBe("+5");
+    expect(formatEcart(-1.5)).toBe("−1,5");
   });
 });

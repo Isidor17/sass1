@@ -2,8 +2,10 @@ export function fcfa(montant: number): string {
   return new Intl.NumberFormat("fr-FR").format(montant).replace(/ | /g, " ") + " F";
 }
 
-export function dateCourte(d: Date): string {
-  return d.toLocaleDateString("fr-FR", { weekday: "short", day: "numeric", month: "short", timeZone: "Africa/Dakar" });
+/** « mer. 20 août », avec l'année si elle diffère de l'année en cours (« mer. 20 août 2025 »). */
+export function dateCourte(d: Date, maintenant = new Date()): string {
+  const autreAnnee = d.getUTCFullYear() !== maintenant.getUTCFullYear();
+  return d.toLocaleDateString("fr-FR", { weekday: "short", day: "numeric", month: "short", ...(autreAnnee ? { year: "numeric" } : {}), timeZone: "Africa/Dakar" });
 }
 
 /** Valeur pour <input type="date"> */

@@ -20,6 +20,9 @@ Elle est construite pour **tester l'usage réel avec 10 tailleurs pilotes**. Ce 
 | **Charge par semaine** comparée à la capacité de l'atelier (anticiper Tabaski / Korité) | tableau de bord, nouvelle commande |
 | Tableau de bord : commandes en retard, à livrer sous 7 jours, prêtes, montant à encaisser | `/app` |
 | **Mesures personnalisées par atelier** : choisir, renommer, ordonner, ajouter ses propres mesures (Femme / Homme / Tous). Retirer une mesure n'efface aucune valeur | `/app/reglages/mesures` |
+| **Historique des mesures** : chaque reprise de mesures est datée, avec les écarts (+4 cm) ; une ancienne prise peut redevenir la référence | fiche client |
+| **Alerte « mesures anciennes »** à la création d'une commande (délai réglable par atelier, 6 mois par défaut) | nouvelle commande |
+| **Mesures attachées à chaque commande** : référence en cas de retouche ou de réclamation | détail de commande |
 | **Import photo du carnet papier** : Claude lit la page, le tailleur relit et corrige avant d'enregistrer | `/app/clients/importer` |
 | **QR code du carnet** : un autre tailleur le scanne et importe le client avec ses mesures ; sans compte, il est invité à s'inscrire | fiche client, `/carnet/[jeton]` |
 | Installable sur l'écran d'accueil Android | `public/manifest.webmanifest` |

@@ -3,6 +3,8 @@ import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
 import { atelierConnecte, urlApp } from "@/lib/session";
 import { champsAtelier, lireMesures } from "@/lib/mesures";
+import { ilYa, ecarts, mesuresAVerifier } from "@/lib/historique";
+import { restaurerMesures } from "../../../actions";
 import { afficherTelephone } from "@/lib/telephone";
 import { dateCourte, fcfa } from "@/lib/format";
 import { lienWhatsApp, messageCarnet } from "@/lib/whatsapp";
@@ -13,21 +15,28 @@ import { QrCode } from "@/components/QrCode";
 import { Avatar } from "@/components/Avatar";
 import { IcoWhatsApp } from "@/components/Icones";
 
-export default async function FicheClient({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ importe?: string }> }) {
+export default async function FicheClient({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ importe?: string; mesures?: string }> }) {
   const a = await atelierConnecte();
   const { id } = await params;
-  const { importe } = await searchParams;
+  const { importe, mesures: mesuresOk } = await searchParams;
   const c = await db.client.findFirst({
     where: { id, atelierId: a.id },
     include: { mesures: { orderBy: { createdAt: "desc" } }, commandes: { orderBy: { createdAt: "desc" } } },
   });
   if (!c) notFound();
   const derniere = c.mesures[0];
+  const champs = champsAtelier(a.champsMesures);
+  const prises = c.mesures.map((m, i) => {
+    const valeurs = lireMesures(m.valeurs);
+    return { ...m, valeurs, ecarts: ecarts(valeurs, c.mesures[i + 1] ? lireMesures(c.mesures[i + 1].valeurs) : null) };
+  });
+  const aVerifier = mesuresAVerifier(derniere?.createdAt, a.validiteMesuresMois);
   const lienCarnet = `${urlApp()}/carnet/${c.carnetToken}`;
 
   return (
     <main className="page">
       {importe && <Alerte succes="Client importé avec ses mesures depuis son carnet." />}
+      {mesuresOk && <Alerte succes="Mesures enregistrées. Les anciennes restent dans l'historique." />}
       <div className="fiche-entete">
         <Avatar nom={c.nom} />
         <div className="ligne-corps">
@@ -49,10 +58,37 @@ export default async function FicheClient({ params, searchParams }: { params: Pr
 
       <div className="row between"><h2>Mesures</h2><Link className="small" href={`/app/clients/${c.id}/mesures`}>Nouvelles mesures</Link></div>
       <div className="card">
-        {derniere && <p className="small muted">Prises le {dateCourte(derniere.createdAt)}{derniere.note ? ` · ${derniere.note}` : ""}</p>}
-        <AfficherMesures valeurs={lireMesures(derniere?.valeurs)} champs={champsAtelier(a.champsMesures)} />
+        {derniere && (
+          <p className={`small ${aVerifier ? "retard" : "muted"}`}>
+            Prises le {dateCourte(derniere.createdAt)}, {ilYa(derniere.createdAt)}{aVerifier ? " · à vérifier" : ""}
+            {derniere.note ? ` · ${derniere.note}` : ""}
+          </p>
+        )}
+        <AfficherMesures valeurs={prises[0]?.valeurs ?? {}} champs={champs} ecarts={prises[0]?.ecarts} />
+        {prises.length > 1 && Object.keys(prises[0].ecarts).length > 0 && (
+          <p className="small muted" style={{ margin: "8px 0 0" }}>Écarts en cm par rapport à la prise du {dateCourte(prises[1].createdAt)}.</p>
+        )}
       </div>
-      {c.mesures.length > 1 && <p className="small muted">{c.mesures.length - 1} ancienne(s) prise(s) de mesures conservée(s).</p>}
+
+      {prises.length > 1 && (
+        <details className="card" style={{ marginTop: 12 }}>
+          <summary>Historique des mesures ({prises.length - 1} prise{prises.length > 2 ? "s" : ""} précédente{prises.length > 2 ? "s" : ""})</summary>
+          <div style={{ marginTop: 12 }}>
+            {prises.slice(1).map((p) => (
+              <div key={p.id} className="prise">
+                <div className="prise-entete">
+                  <span className="small"><b>{dateCourte(p.createdAt)}</b> · {ilYa(p.createdAt)}{p.note ? ` · ${p.note}` : ""}</span>
+                  <form action={restaurerMesures}>
+                    <input type="hidden" name="setId" value={p.id} />
+                    <button className="btn ghost sm">Reprendre</button>
+                  </form>
+                </div>
+                <AfficherMesures valeurs={p.valeurs} champs={champs} ecarts={p.ecarts} />
+              </div>
+            ))}
+          </div>
+        </details>
+      )}
 
       <details className="card" style={{ marginTop: 16 }}>
         <summary>QR code du carnet</summary>

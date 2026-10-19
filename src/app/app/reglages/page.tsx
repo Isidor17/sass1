@@ -21,6 +21,11 @@ export default async function Reglages({ searchParams }: { searchParams: Promise
           <input id="capaciteSemaine" name="capaciteSemaine" inputMode="numeric" defaultValue={a.capaciteSemaine} />
           <p className="small muted">Sert à vous alerter quand une semaine est pleine (Tabaski, Korité…).</p>
         </div>
+        <div>
+          <label htmlFor="validiteMesuresMois">Vérifier les mesures après (mois)</label>
+          <input id="validiteMesuresMois" name="validiteMesuresMois" inputMode="numeric" defaultValue={a.validiteMesuresMois} />
+          <p className="small muted">À la création d&apos;une commande, l&apos;appli vous prévient si les mesures du client sont plus anciennes. 0 = jamais.</p>
+        </div>
         <button className="btn block">Enregistrer</button>
       </form>
       <Link className="action-photo" style={{ marginTop: 20 }} href="/app/reglages/mesures">

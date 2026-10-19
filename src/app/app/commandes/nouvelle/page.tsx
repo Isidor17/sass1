@@ -5,13 +5,14 @@ import { chargeParSemaine } from "@/lib/capacite";
 import { dateCourte, versInputDate } from "@/lib/format";
 import { afficherTelephone } from "@/lib/telephone";
 import { creerCommande } from "../../../actions";
+import { ilYa, mesuresAVerifier } from "@/lib/historique";
 import { Alerte } from "@/components/Alerte";
 import { Avatar } from "@/components/Avatar";
 import { IcoChevron, IcoPhoto } from "@/components/Icones";
 
-export default async function NouvelleCommande({ searchParams }: { searchParams: Promise<{ client?: string; erreur?: string; q?: string }> }) {
+export default async function NouvelleCommande({ searchParams }: { searchParams: Promise<{ client?: string; erreur?: string; q?: string; mesuresOk?: string }> }) {
   const a = await atelierConnecte();
-  const { client: clientId, erreur, q = "" } = await searchParams;
+  const { client: clientId, erreur, q = "", mesuresOk } = await searchParams;
   const client = clientId ? await db.client.findFirst({ where: { id: clientId, atelierId: a.id } }) : null;
 
   // Étape 1 : choisir le client
@@ -51,11 +52,36 @@ export default async function NouvelleCommande({ searchParams }: { searchParams:
   });
   const charge = chargeParSemaine(ouvertes, a.capaciteSemaine, 6);
   const parDefaut = new Date(Date.now() + 14 * 86_400_000);
+  const dernieres = await db.mesureSet.findFirst({ where: { clientId: client.id }, orderBy: { createdAt: "desc" } });
+  const lienMesures = `/app/clients/${client.id}/mesures?retour=commande`;
+  const sansMesures = !dernieres;
+  const anciennes = !mesuresOk && mesuresAVerifier(dernieres?.createdAt, a.validiteMesuresMois);
 
   return (
     <main className="page">
       <h1>Commande pour {client.nom}</h1>
       <Alerte erreur={erreur} />
+      {sansMesures && !mesuresOk && (
+        <div className="alerte-mesures" role="status">
+          <b>Aucune mesure enregistrée pour {client.nom}.</b>
+          <span className="small">Prenez-les maintenant pour qu&apos;elles soient attachées à cette commande.</span>
+          <div className="grid2">
+            <Link className="btn or" href={lienMesures}>Prendre les mesures</Link>
+            <Link className="btn ghost" href={`/app/commandes/nouvelle?client=${client.id}&mesuresOk=1`}>Plus tard</Link>
+          </div>
+        </div>
+      )}
+      {anciennes && dernieres && (
+        <div className="alerte-mesures" role="status">
+          <b>Mesures prises {ilYa(dernieres.createdAt)}.</b>
+          <span className="small">Le client a pu prendre ou perdre du poids depuis le {dateCourte(dernieres.createdAt)}. Vérifiez-les avant de couper.</span>
+          <div className="grid2">
+            <Link className="btn or" href={lienMesures}>Reprendre les mesures</Link>
+            <Link className="btn ghost" href={`/app/commandes/nouvelle?client=${client.id}&mesuresOk=1`}>Elles sont bonnes</Link>
+          </div>
+        </div>
+      )}
+      {mesuresOk && dernieres && <p className="small muted">✓ Mesures du {dateCourte(dernieres.createdAt)} attachées à cette commande.</p>}
       <form action={creerCommande} className="stack">
         <input type="hidden" name="clientId" value={client.id} />
         <div><label htmlFor="modele">Modèle</label><input id="modele" name="modele" required autoFocus placeholder="Grand boubou bazin, broderie col" /></div>

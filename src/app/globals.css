@@ -446,3 +446,16 @@ nav.bas a.plus { padding: 0; }
 .editeur-champs { grid-template-columns: 1fr; gap: 6px; }
 .editeur-champs select { justify-self: start; width: auto; min-height: 34px; padding: 4px 30px 4px 10px; font-size: .85rem; border-radius: 999px; }
 .editeur-ligne { padding: 10px; gap: 8px; }
+
+/* Historique et ancienneté des mesures */
+.ecart { font-style: normal; font-size: .72rem; font-weight: 700; margin-left: 5px; padding: 1px 5px; border-radius: 6px; vertical-align: 1px; }
+.ecart.plus { background: var(--warn-soft); color: var(--accent); }
+.ecart.moins { background: var(--info-soft); color: var(--info); }
+.prise { border-left: 3px solid var(--line); padding: 2px 0 2px 12px; }
+.prise + .prise { margin-top: 14px; }
+.prise-entete { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 6px; }
+.alerte-mesures { border: 1.5px solid var(--or); background: color-mix(in srgb, var(--or) 12%, var(--surface)); border-radius: 16px; padding: 14px 16px; margin: 4px 0 14px; }
+.alerte-mesures b { display: block; margin-bottom: 4px; }
+.alerte-mesures .grid2 { margin-top: 12px; }
+.mesures-commande-entete { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; }
+.alerte-mesures .grid2 { grid-template-columns: 1fr; gap: 8px; }
