@@ -2,10 +2,11 @@ import Link from "next/link";
 import { db } from "@/lib/db";
 import { atelierConnecte } from "@/lib/session";
 import { afficherTelephone } from "@/lib/telephone";
+import { Alerte } from "@/components/Alerte";
 
-export default async function Clients({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
+export default async function Clients({ searchParams }: { searchParams: Promise<{ q?: string; importes?: string }> }) {
   const a = await atelierConnecte();
-  const { q = "" } = await searchParams;
+  const { q = "", importes } = await searchParams;
   const recherche = q.trim();
   const chiffres = recherche.replace(/\D/g, "");
   const clients = await db.client.findMany({
@@ -23,6 +24,8 @@ export default async function Clients({ searchParams }: { searchParams: Promise<
   return (
     <main className="page">
       <div className="row between"><h1>Clients</h1><Link className="btn sm" href="/app/clients/nouveau">＋ Client</Link></div>
+      {importes && <div style={{ marginTop: 12 }}><Alerte succes={`${importes} client(s) importé(s) depuis le carnet.`} /></div>}
+      <Link className="btn ghost block" style={{ marginTop: 12 }} href="/app/clients/importer">📷 Importer un carnet papier</Link>
       <form style={{ margin: "12px 0" }}>
         <input name="q" type="search" placeholder="Rechercher un nom ou un numéro" defaultValue={recherche} />
       </form>

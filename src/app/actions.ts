@@ -10,6 +10,8 @@ import { nouveauToken } from "@/lib/token";
 import { mesuresDepuisFormulaire } from "@/lib/mesures";
 import { depuisInputDate } from "@/lib/format";
 import { estStatut } from "@/lib/statut";
+import { versBrouillons } from "@/lib/extraction";
+import { ExtractionImpossible, extraireCarnet } from "@/lib/claude";
 
 const txt = (f: FormData, k: string) => String(f.get(k) ?? "").trim();
 const entier = (f: FormData, k: string) => {
@@ -33,37 +35,51 @@ function echec(tel: string) {
 
 // ---------------- Compte ----------------
 
+/** Garde le carnet scanné dans l'URL quand on renvoie une erreur sur /inscription ou /connexion. */
+function pageAuth(f: FormData, chemin: string): string {
+  const carnet = txt(f, "carnet");
+  return /^[\w-]{10,40}$/.test(carnet) ? `${chemin}?carnet=${carnet}` : chemin;
+}
+
 export async function inscription(f: FormData) {
+  const page = pageAuth(f, "/inscription");
   const nom = txt(f, "nom");
   const telephone = normaliserTelephone(txt(f, "telephone"));
   const pin = txt(f, "pin");
-  if (!nom) erreur("/inscription", "Donnez le nom de l'atelier.");
-  if (!telephone) erreur("/inscription", "Numéro de téléphone invalide.");
-  if (!pinValide(pin)) erreur("/inscription", "Le code doit faire 4 à 6 chiffres.");
-  if (pin !== txt(f, "pin2")) erreur("/inscription", "Les deux codes ne sont pas identiques.");
+  if (!nom) erreur(page, "Donnez le nom de l'atelier.");
+  if (!telephone) erreur(page, "Numéro de téléphone invalide.");
+  if (!pinValide(pin)) erreur(page, "Le code doit faire 4 à 6 chiffres.");
+  if (pin !== txt(f, "pin2")) erreur(page, "Les deux codes ne sont pas identiques.");
   if (await db.atelier.findUnique({ where: { telephone: telephone! } }))
-    erreur("/inscription", "Ce numéro a déjà un compte. Connectez-vous.");
+    erreur(page, "Ce numéro a déjà un compte. Connectez-vous.");
 
   const a = await db.atelier.create({
     data: { nom, telephone: telephone!, pinHash: hacherPin(pin), quartier: txt(f, "quartier") || null },
   });
   await ouvrirSession(a.id);
-  redirect("/app");
+  redirect(retourApresConnexion(f));
+}
+
+/** Après inscription/connexion depuis un carnet scanné, on revient sur ce carnet pour l'importer. */
+function retourApresConnexion(f: FormData): string {
+  const carnet = txt(f, "carnet");
+  return /^[\w-]{10,40}$/.test(carnet) ? `/carnet/${carnet}` : "/app";
 }
 
 export async function connexion(f: FormData) {
+  const page = pageAuth(f, "/connexion");
   const telephone = normaliserTelephone(txt(f, "telephone"));
   const pin = txt(f, "pin");
-  if (!telephone) erreur("/connexion", "Numéro de téléphone invalide.");
-  if (bloque(telephone!)) erreur("/connexion", "Trop d'essais. Réessayez dans 15 minutes.");
+  if (!telephone) erreur(page, "Numéro de téléphone invalide.");
+  if (bloque(telephone!)) erreur(page, "Trop d'essais. Réessayez dans 15 minutes.");
   const a = await db.atelier.findUnique({ where: { telephone: telephone! } });
   if (!a || !verifierPin(pin, a.pinHash)) {
     echec(telephone!);
-    erreur("/connexion", "Numéro ou code incorrect.");
+    erreur(page, "Numéro ou code incorrect.");
   }
   essais.delete(telephone!);
   await ouvrirSession(a!.id);
-  redirect("/app");
+  redirect(retourApresConnexion(f));
 }
 
 export async function deconnexion() {
@@ -227,4 +243,100 @@ export async function supprimerCommande(f: FormData) {
   const a = await atelierConnecte();
   await db.commande.deleteMany({ where: { id: txt(f, "id"), atelierId: a.id } });
   redirect("/app/commandes");
+}
+
+// ---------------- Import photo de carnet ----------------
+
+const TYPES_IMAGE = ["image/jpeg", "image/png", "image/webp"] as const;
+
+export async function importerPhoto(f: FormData) {
+  const a = await atelierConnecte();
+  const photo = f.get("photo");
+  if (!(photo instanceof File) || photo.size === 0) erreur("/app/clients/importer", "Choisissez une photo.");
+  const fichier = photo as File;
+  const type = TYPES_IMAGE.find((t) => t === fichier.type);
+  if (!type) erreur("/app/clients/importer", "Format non pris en charge : utilisez une photo JPEG ou PNG.");
+  if (fichier.size > 8 * 1024 * 1024) erreur("/app/clients/importer", "Photo trop lourde (8 Mo maximum).");
+
+  let id: string;
+  try {
+    const extraction = await extraireCarnet({ data: Buffer.from(await fichier.arrayBuffer()).toString("base64"), mediaType: type! });
+    const brouillons = versBrouillons(extraction);
+    if (!brouillons.length) erreur("/app/clients/importer", "Aucun client trouvé sur la photo. Cadrez la page entière, bien éclairée.");
+    const imp = await db.importPhoto.create({
+      data: { atelierId: a.id, resultat: JSON.stringify({ brouillons, remarque: extraction.remarque }) },
+    });
+    id = imp.id;
+  } catch (e) {
+    if (e instanceof ExtractionImpossible) erreur("/app/clients/importer", e.message);
+    throw e;
+  }
+  redirect(`/app/clients/importer/${id!}`);
+}
+
+export async function validerImport(f: FormData) {
+  const a = await atelierConnecte();
+  const id = txt(f, "importId");
+  const imp = await db.importPhoto.findFirst({ where: { id, atelierId: a.id, valide: false } });
+  if (!imp) redirect("/app/clients");
+  const n = Math.min(100, entier(f, "nombre"));
+
+  const aCreer = [];
+  for (let i = 0; i < n; i++) {
+    if (txt(f, `c${i}_garder`) !== "1") continue;
+    const nom = txt(f, `c${i}_nom`);
+    if (!nom) continue;
+    const telSaisi = txt(f, `c${i}_telephone`);
+    const mesures = mesuresDepuisFormulaire(f, `c${i}_`);
+    aCreer.push({
+      atelierId: a.id,
+      nom,
+      telephone: telSaisi ? normaliserTelephone(telSaisi) : null,
+      genre: txt(f, `c${i}_genre`) === "H" ? "H" : "F",
+      notes: txt(f, `c${i}_notes`) || null,
+      carnetToken: nouveauToken(),
+      mesures,
+    });
+  }
+  if (!aCreer.length) erreur(`/app/clients/importer/${id}`, "Cochez au moins un client à enregistrer.");
+
+  await db.$transaction([
+    ...aCreer.map(({ mesures, ...c }) =>
+      db.client.create({
+        data: { ...c, mesures: Object.keys(mesures).length ? { create: { valeurs: JSON.stringify(mesures), note: "Importé depuis le carnet papier" } } : undefined },
+      }),
+    ),
+    db.importPhoto.update({ where: { id }, data: { valide: true } }),
+  ]);
+  redirect(`/app/clients?importes=${aCreer.length}`);
+}
+
+// ---------------- Import d'un client par son carnet (QR) ----------------
+
+export async function importerDepuisCarnet(f: FormData) {
+  const a = await atelierConnecte();
+  const token = txt(f, "token");
+  const source = await db.client.findUnique({
+    where: { carnetToken: token },
+    include: { mesures: { orderBy: { createdAt: "desc" }, take: 1 } },
+  });
+  if (!source) redirect("/app/clients");
+  if (source!.atelierId === a.id) redirect(`/app/clients/${source!.id}`);
+
+  const deja = await db.client.findFirst({ where: { atelierId: a.id, origineCarnet: token } });
+  if (deja) redirect(`/app/clients/${deja.id}`);
+
+  const m = source!.mesures[0];
+  const c = await db.client.create({
+    data: {
+      atelierId: a.id,
+      nom: source!.nom,
+      telephone: source!.telephone,
+      genre: source!.genre,
+      carnetToken: nouveauToken(),
+      origineCarnet: token,
+      mesures: m ? { create: { valeurs: m.valeurs, note: "Importé depuis le carnet du client" } } : undefined,
+    },
+  });
+  redirect(`/app/clients/${c.id}?importe=1`);
 }

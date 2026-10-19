@@ -110,3 +110,30 @@ describe("statuts et WhatsApp", () => {
     expect(decodeURIComponent(l.split("text=")[1])).toBe(msg);
   });
 });
+
+describe("import photo", () => {
+  it("convertit l'extraction en brouillons propres", async () => {
+    const { versBrouillons, ExtractionSchema } = await import("./extraction");
+    const vide = Object.fromEntries((await import("./mesures")).CHAMPS_MESURES.map((c) => [c.cle, null]));
+    const e = ExtractionSchema.parse({
+      remarque: null,
+      clients: [
+        { nom: " Awa Diop ", telephone: "77 123 45 67", genre: "inconnu", mesures: { ...vide, poitrine: 92.46, taille: 0, epaule: 900 }, autres: [{ libelle: "Carrure", valeur: "40" }], doute: null },
+        { nom: "  ", telephone: null, genre: "H", mesures: vide, autres: [], doute: null },
+        { nom: "Modou", telephone: "abc", genre: "H", mesures: { ...vide, cou: 41 }, autres: [], doute: "Manche illisible" },
+      ],
+    });
+    const b = versBrouillons(e);
+    expect(b).toHaveLength(2);
+    expect(b[0]).toEqual({ nom: "Awa Diop", telephone: "221771234567", genre: "F", mesures: { poitrine: 92.5 }, notes: "Carrure : 40", doute: null });
+    expect(b[1].genre).toBe("H");
+    expect(b[1].telephone).toBeNull();
+    expect(b[1].doute).toBe("Manche illisible");
+  });
+  it("lit les mesures préfixées d'un formulaire multi-clients", () => {
+    const f = new FormData();
+    f.set("c1_m_taille", "70");
+    f.set("m_taille", "99");
+    expect(mesuresDepuisFormulaire(f, "c1_")).toEqual({ taille: 70 });
+  });
+});

@@ -8,10 +8,13 @@ import { dateCourte, fcfa } from "@/lib/format";
 import { lienWhatsApp, messageCarnet } from "@/lib/whatsapp";
 import { AfficherMesures } from "@/components/AfficherMesures";
 import { StatutBadge } from "@/components/StatutBadge";
+import { Alerte } from "@/components/Alerte";
+import { QrCode } from "@/components/QrCode";
 
-export default async function FicheClient({ params }: { params: Promise<{ id: string }> }) {
+export default async function FicheClient({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ importe?: string }> }) {
   const a = await atelierConnecte();
   const { id } = await params;
+  const { importe } = await searchParams;
   const c = await db.client.findFirst({
     where: { id, atelierId: a.id },
     include: { mesures: { orderBy: { createdAt: "desc" } }, commandes: { orderBy: { createdAt: "desc" } } },
@@ -22,6 +25,7 @@ export default async function FicheClient({ params }: { params: Promise<{ id: st
 
   return (
     <main className="page">
+      {importe && <Alerte succes="Client importé avec ses mesures depuis son carnet." />}
       <div className="row between">
         <h1>{c.nom}</h1>
         <Link className="btn ghost sm" href={`/app/clients/${c.id}/modifier`}>Modifier</Link>
@@ -44,6 +48,13 @@ export default async function FicheClient({ params }: { params: Promise<{ id: st
         <AfficherMesures valeurs={lireMesures(derniere?.valeurs)} genre={c.genre} />
       </div>
       {c.mesures.length > 1 && <p className="small muted">{c.mesures.length - 1} ancienne(s) prise(s) de mesures conservée(s).</p>}
+
+      <details className="card" style={{ marginTop: 16 }}>
+        <summary>QR code du carnet</summary>
+        <p className="small muted">Le client le scanne pour garder ses mesures, ou le montre à un autre tailleur.</p>
+        <QrCode url={lienCarnet} legende={c.nom} />
+        <p className="small" style={{ textAlign: "center" }}><a href={lienCarnet} target="_blank" rel="noreferrer">Ouvrir / imprimer le carnet</a></p>
+      </details>
 
       <h2>Commandes</h2>
       {c.commandes.length === 0 ? <p className="muted">Aucune commande.</p> : (

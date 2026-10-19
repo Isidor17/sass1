@@ -158,3 +158,14 @@ nav.bas a.plus b { color: var(--brand); }
   nav.bas, .no-print { display: none !important; }
   body { background: #fff; color: #000; }
 }
+
+.qr { margin: 0 auto; text-align: center; }
+.qr > div { background: #fff; padding: 8px; border-radius: 12px; border: 1px solid var(--line); line-height: 0; }
+.qr svg { width: 100%; height: auto; }
+.qr figcaption { margin-top: 6px; }
+
+.brouillon { border-left: 4px solid var(--brand); }
+.brouillon.doute { border-left-color: var(--accent); }
+.case { display: flex; align-items: center; gap: 10px; font-weight: 600; }
+.case input { width: 22px; min-height: 22px; height: 22px; }
+.apercu { max-width: 100%; border-radius: 12px; border: 1px solid var(--line); display: block; }

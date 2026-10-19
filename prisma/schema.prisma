@@ -18,6 +18,7 @@ model Atelier {
   createdAt DateTime   @default(now())
   clients   Client[]
   commandes Commande[]
+  imports   ImportPhoto[]
 }
 
 model Client {
@@ -29,6 +30,7 @@ model Client {
   genre       String     @default("F") // "F" | "H"
   notes       String?
   carnetToken String     @unique // lien public du carnet de mesures du client
+  origineCarnet String?  // carnetToken d'un autre atelier si le client a été importé par QR
   createdAt   DateTime   @default(now())
   mesures     MesureSet[]
   commandes   Commande[]
@@ -76,4 +78,14 @@ model Paiement {
   montant    Int      // FCFA
   moyen      String   // WAVE | ORANGE_MONEY | ESPECES
   createdAt  DateTime @default(now())
+}
+
+// Résultat d'extraction d'une photo de carnet papier, en attente de validation par le tailleur.
+model ImportPhoto {
+  id        String   @id @default(cuid())
+  atelierId String
+  atelier   Atelier  @relation(fields: [atelierId], references: [id], onDelete: Cascade)
+  resultat  String   // JSON : liste de clients extraits
+  valide    Boolean  @default(false)
+  createdAt DateTime @default(now())
 }

@@ -26,11 +26,11 @@ export function champsPour(genre: string): ChampMesure[] {
   return CHAMPS_MESURES.filter((c) => c.genres.includes(g));
 }
 
-/** Extrait les mesures d'un formulaire (champs "m_<cle>"). Accepte la virgule décimale. */
-export function mesuresDepuisFormulaire(form: FormData): Mesures {
+/** Extrait les mesures d'un formulaire (champs "<prefixe>m_<cle>"). Accepte la virgule décimale. */
+export function mesuresDepuisFormulaire(form: FormData, prefixe = ""): Mesures {
   const out: Mesures = {};
   for (const c of CHAMPS_MESURES) {
-    const brut = String(form.get("m_" + c.cle) ?? "").trim().replace(",", ".");
+    const brut = String(form.get(prefixe + "m_" + c.cle) ?? "").trim().replace(",", ".");
     if (!brut) continue;
     const v = Number(brut);
     if (Number.isFinite(v) && v > 0 && v < 400) out[c.cle] = Math.round(v * 10) / 10;
