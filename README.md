@@ -1,4 +1,6 @@
-# Atelier — MVP de gestion pour tailleurs (Sénégal)
+# Nawkat — gestion d'atelier de couture (Sénégal)
+
+*Nawkat* : « le couturier » en wolof (*ñawkat*).
 
 Une application web mobile pour les ateliers de couture. On enregistre les mesures une fois, on suit chaque commande, on encaisse les acomptes et on prévient le client sur WhatsApp.
 

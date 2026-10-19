@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { dateCourte, fcfa } from "@/lib/format";
 import { LIBELLES, STATUTS } from "@/lib/statut";
 import { afficherTelephone } from "@/lib/telephone";
+import { Propulse } from "@/components/Propulse";
 
 export const metadata: Metadata = { title: "Suivi de commande", robots: { index: false } };
 
@@ -46,6 +47,7 @@ export default async function Suivi({ params }: { params: Promise<{ token: strin
 
       <a className="btn ghost block" style={{ marginTop: 16 }} href={`https://wa.me/${c.atelier.telephone}`}>Contacter l&apos;atelier · {afficherTelephone(c.atelier.telephone)}</a>
       <p className="small muted" style={{ marginTop: 16 }}>Vos mesures sont enregistrées : plus besoin de les reprendre à la prochaine commande.</p>
+      <Propulse />
     </main>
   );
 }

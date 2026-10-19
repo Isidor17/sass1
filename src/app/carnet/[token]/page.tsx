@@ -9,6 +9,7 @@ import { importerDepuisCarnet } from "../../actions";
 import { AfficherMesures } from "@/components/AfficherMesures";
 import { Imprimer } from "@/components/Imprimer";
 import { QrCode } from "@/components/QrCode";
+import { Propulse } from "@/components/Propulse";
 
 export const metadata: Metadata = { title: "Mon carnet de mesures", robots: { index: false } };
 
@@ -58,6 +59,7 @@ export default async function Carnet({ params }: { params: Promise<{ token: stri
         )}
         <Imprimer />
       </div>
+      <Propulse />
     </main>
   );
 }

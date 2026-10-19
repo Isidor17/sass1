@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Logo } from "@/components/Logo";
 import { connexion } from "../actions";
 import { Alerte } from "@/components/Alerte";
 
@@ -6,6 +7,7 @@ export default async function Connexion({ searchParams }: { searchParams: Promis
   const { erreur, carnet } = await searchParams;
   return (
     <main className="page">
+      <Link href="/" className="auth-logo"><Logo /></Link>
       <h1>Connexion</h1>
       <Alerte erreur={erreur} />
       <form action={connexion} className="stack">

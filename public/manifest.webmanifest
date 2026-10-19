@@ -1,10 +1,10 @@
 {
-  "name": "Atelier — gestion couture",
-  "short_name": "Atelier",
+  "name": "Nawkat — gestion d'atelier de couture",
+  "short_name": "Nawkat",
   "start_url": "/app",
   "display": "standalone",
   "background_color": "#f7f4ef",
-  "theme_color": "#0f5c4d",
+  "theme_color": "#0d4f43",
   "lang": "fr",
   "icons": [
     { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }

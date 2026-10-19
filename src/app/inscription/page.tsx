@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Logo } from "@/components/Logo";
 import { inscription } from "../actions";
 import { Alerte } from "@/components/Alerte";
 
@@ -6,6 +7,7 @@ export default async function Inscription({ searchParams }: { searchParams: Prom
   const { erreur, carnet } = await searchParams;
   return (
     <main className="page">
+      <Link href="/" className="auth-logo"><Logo /></Link>
       <h1>Créer mon atelier</h1>
       <p className="muted">Votre numéro et un code à 4 chiffres suffisent.</p>
       <Alerte erreur={erreur} />

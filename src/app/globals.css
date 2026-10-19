@@ -318,3 +318,8 @@ nav.bas a.plus b { color: var(--brand); }
 @media (max-width: 520px) {
   .l-actions .l-btn { width: 100%; }
 }
+
+.propulse { display: flex; align-items: center; justify-content: center; gap: 6px; margin: 28px 0 0; color: var(--muted); text-decoration: none; font-size: .85rem; }
+.auth-logo { display: block; margin: 8px 0 24px; text-decoration: none; color: inherit; }
+/* Sur fond vert, la tuile du logo se distingue par un léger contraste */
+.l-entete .logo svg rect, .l-final .logo svg rect { fill: #ffffff1f; }
